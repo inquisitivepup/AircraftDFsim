@@ -25,8 +25,7 @@ By utilizing a lightweight, browser-based architecture, the simulator eliminates
 
 ##  Installation & Setup
 Because the simulator is 100% client-side, setup is instantaneous.
-1. Visit https://inquisitivepup.github.io/AircraftDFsim/
-2. Use FullScreen Mode
+1. Visit www.dfsimulator.com
 3. **For Dual-Monitor Operations:** * Move the main browser window to the Instructor's monitor.
    * Click **Launch Trainee Display**.
    * Drag the newly opened window to the Trainee's monitor and maximize it.
