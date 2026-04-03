@@ -59,7 +59,7 @@ Clicking **Terminate Exercise** halts the physics engine and automatically launc
 
 ---
 
-## 🗺️ Future Roadmap (Mk2)
+##  Future Roadmap (Mk2)
 The following capabilities are slated for future development:
 * **Environmental Variables:** Dynamic wind drift and automatic crosswind correction logic.
 * **Complex Airspace:** Multi-target tracking for high-density deconfliction training.
