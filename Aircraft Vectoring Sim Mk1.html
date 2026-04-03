@@ -1,0 +1,1140 @@
+<!DOCTYPE html><html lang="en"><head>
+   <link rel="icon" href="assets/logo.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aircraft Vectoring Simulator Mk1</title>
+	
+    <link href="/Assets/googlefont" rel="stylesheet">
+    <style>
+        /* --- Base & Fonts --- */
+        :root {
+            --color-gray-200: #e5e7eb;
+            --color-gray-300: #d1d5db;
+            --color-gray-500: #6b7280;
+            --color-gray-600: #4b5563;
+            --color-gray-700: #374151;
+            --color-gray-800: #1f2937;
+            --color-gray-900: #111827;
+            --color-cyan-300: #67e8f9;
+            --color-cyan-400: #22d3ee;
+            --color-cyan-500: #06b6d4;
+            --color-cyan-600: #0891b2;
+            --color-blue-500: #3b82f6;
+            --color-blue-600: #2563eb;
+            --color-green-500: #22c55e;
+            --color-green-600: #16a34a;
+            --color-yellow-500: #eab308;
+            --color-yellow-600: #ca8a04;
+            --color-red-500: #ef4444;
+            --color-red-600: #dc2626;
+            --color-pink-400: #f472b6;
+        }
+
+        /* --- Refined Light Theme Overrides --- */
+        body.light-theme {
+            --color-gray-900: #f1f5f9; /* Soft Slate 100 for background */
+            --color-gray-800: #ffffff; /* Pure white panels */
+            --color-gray-700: #e2e8f0; /* Soft borders */
+            --color-gray-600: #94a3b8; /* Muted Elements */
+            --color-gray-500: #64748b; 
+            --color-gray-300: #475569; /* Slate 600 for labels */
+            --color-gray-200: #0f172a; /* Deep charcoal for main text */
+            
+            --color-cyan-300: #0e7490; /* Deep cerulean for instrument text */
+            --color-cyan-400: #0891b2; /* Primary accent */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            background-color: var(--color-gray-900);
+            color: var(--color-gray-200);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 0.5rem;
+            margin: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .display-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        /* --- General Purpose & Utility Classes --- */
+        .w-full { width: 100%; }
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+        .font-bold { font-weight: 700; }
+        .font-semibold { font-weight: 600; }
+        .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+        .cursor-pointer { cursor: pointer; }
+        
+        .space-y-2 > *:not([hidden]) ~ *:not([hidden]) { margin-top: 0.5rem; }
+        .space-y-4 > *:not([hidden]) ~ *:not([hidden]) { margin-top: 1rem; }
+        .space-x-2 > *:not([hidden]) ~ *:not([hidden]) { margin-left: 0.5rem; }
+        .space-x-4 > *:not([hidden]) ~ *:not([hidden]) { margin-left: 1rem; }
+        
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .flex-grow { flex-grow: 1; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .mt-auto { margin-top: auto; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-8 { margin-top: 2rem; }
+        .my-2 { margin-top: 0.5rem; margin-bottom: 0.5rem; }
+        .my-6 { margin-top: 1.5rem; margin-bottom: 1.5rem; }
+        .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+        .pb-4 { padding-bottom: 1rem; }
+        .pb-6 { padding-bottom: 1.5rem; }
+        .border-y { border-top-width: 1px; border-bottom-width: 1px; }
+        .border-t { border-top-width: 1px; }
+        .border-b { border-bottom-width: 1px; border-bottom-style: solid; border-color: var(--color-gray-700); }
+        .border { border-width: 1px; }
+        .border-2 { border-width: 2px; }
+        .border-gray-700 { border-color: var(--color-gray-700); }
+        .whitespace-nowrap { white-space: nowrap; }
+
+        /* --- Buttons --- */
+        .shortcut-btn, .action-btn, .turn-btn, .ac-select-btn {
+            transition: all 0.2s ease-in-out;
+            border-radius: 0.375rem;
+            font-weight: 700;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            cursor: pointer;
+        }
+        .shortcut-btn:hover, .action-btn:hover, .turn-btn:hover, .ac-select-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        body.light-theme .shortcut-btn:hover, 
+        body.light-theme .action-btn:hover, 
+        body.light-theme .turn-btn:hover, 
+        body.light-theme .ac-select-btn:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-btn:disabled, .ac-select-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .shortcut-btn { background-color: var(--color-cyan-600); }
+        .shortcut-btn:hover { background-color: var(--color-cyan-500); }
+        
+        .turn-btn { background-color: var(--color-blue-600); padding: 0.25rem 0.75rem; }
+        .turn-btn:hover { background-color: var(--color-blue-500); }
+        
+        .fly-level-btn { background-color: var(--color-green-600); height: 100%; min-height: 42px; }
+        .fly-level-btn:hover { background-color: var(--color-green-500); }
+
+        /* --- Custom Components --- */
+        .main-container {
+            width: 100%;
+            max-width: 80rem; 
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            height: 95vh;
+        }
+
+        .settings-panel {
+            width: 100%;
+            background-color: var(--color-gray-800);
+            border-radius: 0.75rem; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            border: 1px solid transparent;
+        }
+
+        body.light-theme .settings-panel {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            border: 1px solid var(--color-gray-700);
+        }
+        
+        .settings-title {
+            font-size: 1.25rem; 
+            font-weight: 700; 
+            text-align: center;
+            margin-bottom: 1.5rem; 
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.875rem; 
+            font-weight: 500; 
+            color: var(--color-gray-300);
+            margin-bottom: 0.25rem; 
+        }
+
+        .input-field {
+            width: 100%;
+            background-color: var(--color-gray-700);
+            border: 1px solid var(--color-gray-600);
+            border-radius: 0.375rem; 
+            padding: 0.5rem 0.75rem; 
+            color: var(--color-gray-200);
+            box-sizing: border-box;
+        }
+        body.light-theme .input-field, body.light-theme .quick-turn-input {
+            background-color: #ffffff;
+            border-color: #cbd5e1;
+        }
+        .input-field:focus {
+            outline: none;
+            --tw-ring-color: var(--color-cyan-500);
+            box-shadow: 0 0 0 2px var(--tw-ring-color);
+        }
+
+        .advanced-settings-btn {
+             color: var(--color-cyan-400);
+             font-size: 0.875rem;
+             margin-top: 0.5rem;
+             background: none;
+             border: none;
+             cursor: pointer;
+             padding: 0;
+        }
+        .advanced-settings-btn:hover { color: var(--color-cyan-300); }
+
+        /* --- Stopwatch Container Styling --- */
+        .stopwatch-container {
+            border: 2px solid var(--color-cyan-600);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            background-color: rgba(8, 145, 178, 0.15);
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
+        }
+        body.light-theme .stopwatch-container {
+            background-color: #f0f9ff;
+            border-color: #bae6fd;
+            box-shadow: none;
+        }
+        
+        .stopwatch-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        .stopwatch-display {
+            font-size: 1.875rem;
+            line-height: 2.25rem;
+            text-align: center;
+            color: var(--color-cyan-400);
+            margin-bottom: 0.75rem;
+        }
+
+        body.light-theme .stopwatch-display {
+            color: #0369a1;
+        }
+
+        .stopwatch-btn {
+            color: white;
+            font-weight: 700;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+        .start-btn { background-color: var(--color-green-600); }
+        .start-btn:hover { background-color: var(--color-green-500); }
+        .stop-btn { background-color: var(--color-yellow-600); }
+        .stop-btn:hover { background-color: var(--color-yellow-500); }
+        .reset-btn { background-color: var(--color-gray-600); }
+        .reset-btn:hover { background-color: var(--color-gray-500); }
+        
+        .apply-restart-btn { background-color: var(--color-blue-600); }
+        .apply-restart-btn:hover { background-color: var(--color-blue-500); }
+        
+        .terminate-btn { background-color: var(--color-red-600); }
+        .terminate-btn:hover { background-color: var(--color-red-500); }
+
+        .simulator-container {
+            width: 100%;
+            background-color: var(--color-gray-800);
+            border-radius: 0.75rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            border: 1px solid transparent;
+        }
+
+        body.light-theme .simulator-container {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            border: 1px solid var(--color-gray-700);
+        }
+
+        .simulator-header {
+            background-color: rgba(17, 24, 39, 0.5); 
+            padding: 1rem;
+            border-bottom: 1px solid var(--color-gray-700);
+        }
+        body.light-theme .simulator-header, body.light-theme .simulator-footer {
+            background-color: #ffffff;
+            border-color: #e2e8f0;
+        }
+
+        .header-credit {
+            text-align: center;
+            font-size: 0.75rem; 
+            color: var(--color-pink-400);
+            margin-bottom: 0.5rem;
+        }
+        .header-title {
+            font-size: 1.5rem; 
+            line-height: 2rem;
+            font-weight: 700;
+            text-align: center;
+        }
+        .header-info {
+            text-align: center;
+            font-size: 0.875rem; 
+            color: var(--color-cyan-400);
+        }
+        
+        .simulator-main {
+            flex-grow: 1;
+            padding: 1.5rem; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .main-homing-display {
+            flex-grow: 1;
+            color: var(--color-cyan-300);
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 1.5rem; 
+            border-radius: 0.5rem; 
+            border: 2px solid var(--color-gray-700);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12rem;
+            line-height: 1;
+            text-shadow: 0 0 5px #67e8f9, 0 0 10px #67e8f9, 0 0 15px #06b6d4;
+            letter-spacing: 0.1em;
+            flex-basis: 80%;
+        }
+        body.light-theme .main-homing-display {
+            background-color: #f8fafc;
+            color: var(--color-cyan-300);
+            border-color: #cbd5e1;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+            text-shadow: none;
+        }
+
+        .single-line-output {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 0.75rem; 
+            border-radius: 0.375rem; 
+            border: 1px solid var(--color-gray-700);
+            color: var(--color-cyan-400);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            text-align: center;
+            font-size: 1.125rem; 
+            flex-basis: 20%;
+            min-height: 3rem;
+            width: 100%;
+            max-width: 42rem; 
+            height: 3rem; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        body.light-theme .single-line-output {
+            background-color: #f8fafc;
+            color: var(--color-cyan-300);
+            border-color: #cbd5e1;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+            font-weight: 600;
+        }
+        
+        .simulator-footer {
+            background-color: rgba(17, 24, 39, 0.5); 
+            padding: 1rem;
+            border-top: 1px solid var(--color-gray-700);
+        }
+        
+        .quick-turn-container {
+            margin-top: 1rem; 
+            padding: 0.75rem; 
+            border: 1px solid var(--color-gray-700);
+            border-radius: 0.5rem; 
+            background-color: rgba(17, 24, 39, 0.4); 
+        }
+        body.light-theme .quick-turn-container { 
+            background-color: #f8fafc; 
+            border-color: #e2e8f0;
+        }
+
+        .quick-turn-title {
+            text-align: center;
+            font-weight: 600;
+            color: var(--color-gray-300);
+            margin-bottom: 0.75rem;
+        }
+        .quick-turn-command-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(55, 65, 81, 0.5); 
+            padding: 0.5rem; 
+            border-radius: 0.375rem; 
+            height: 100%;
+        }
+        body.light-theme .quick-turn-command-group { 
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .quick-turn-command-group > *:not([hidden]) ~ *:not([hidden]) { margin-left: 0.5rem; } 
+        .quick-turn-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--color-gray-300);
+            white-space: nowrap;
+        }
+        .quick-turn-input {
+            width: 100%;
+            background-color: var(--color-gray-800);
+            border: 1px solid var(--color-gray-600);
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.5rem; 
+            color: var(--color-gray-200);
+            box-sizing: border-box;
+        }
+
+        /* --- Modal Styles --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+        }
+        
+        body.light-theme .modal {
+            background-color: rgba(15, 23, 42, 0.4);
+        }
+
+        .modal-content {
+            background-color: #1f2937;
+            margin: auto;
+            padding: 24px;
+            border: 1px solid var(--color-gray-600);
+            width: 90%;
+            max-width: 500px;
+            border-radius: 0.5rem;
+            text-align: center;
+            position: relative;
+        }
+        body.light-theme .modal-content { 
+            background-color: #ffffff; 
+            border-color: #e2e8f0;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .modal-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+        .advanced-modal-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; }
+        .aircraft-select-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; }
+        .close-btn {
+            color: #aaa;
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-btn:hover, .close-btn:focus { color: #fff; text-decoration: none; }
+        body.light-theme .close-btn { color: #94a3b8; }
+        body.light-theme .close-btn:hover { color: #0f172a; }
+
+        /* Fullscreen Modal Styles */
+        #pathModal.fullscreen .modal-content {
+            width: 100%; height: 100%; max-width: 100%; border-radius: 0;
+            padding: 10px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; border: none;
+        }
+        #pathModal.fullscreen canvas { margin: auto; }
+        
+        .ac-type-btn {
+            width: 100%; padding: 0.75rem 1rem; font-weight: 700;
+            color: white; border-radius: 0.375rem;
+        }
+        .ac-type-fighter { background-color: var(--color-red-600); }
+        .ac-type-fighter:hover { background-color: var(--color-red-500); }
+        .ac-type-transport { background-color: var(--color-blue-600); }
+        .ac-type-transport:hover { background-color: var(--color-blue-500); }
+        .ac-type-helicopter { background-color: var(--color-green-600); }
+        .ac-type-helicopter:hover { background-color: var(--color-green-500); }
+
+        /* --- Media Queries for Responsiveness --- */
+        @media (min-width: 640px) {
+            body { padding: 1rem; }
+            .main-container { height: 90vh; }
+            .settings-panel { padding: 1.5rem; }
+            .footer-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 768px) {
+             .main-homing-display { font-size: 8rem; }
+        }
+        
+        @media (min-width: 768px) {
+            .main-container { flex-direction: row; }
+            .settings-panel { width: 33.333333%; }
+            .simulator-container { width: 66.666667%; }
+            .quick-turn-grid { grid-template-columns: 1fr auto 1fr; } 
+        }
+        
+        @media (min-width: 1024px) {
+            .settings-panel { width: 25%; }
+            .simulator-container { width: 75%; }
+        }
+    </style></head><body>
+
+    <div class="main-container">
+
+        <div class="settings-panel">
+            <h2 class="settings-title display-font">Settings</h2>
+            <div class="space-y-4 mb-4">
+                <div>
+                    <label for="runwayInput" class="input-label">Runway In Use</label>
+                    <input type="number" id="runwayInput" class="input-field" value="15" min="1" max="36">
+                </div>
+                <div>
+                    <label for="turnRateInput" class="input-label">Turn Rate (deg/sec)</label>
+                    <input type="number" id="turnRateInput" class="input-field" value="2" min="1" max="3">
+                </div>
+                <div>
+                    <label for="spawnDistInput" class="input-label">Spawn Distance (NM)</label>
+                    <input type="number" id="spawnDistInput" class="input-field" value="25" min="5">
+                </div>
+                 <div>
+                    <button id="advancedSettingsBtn" class="advanced-settings-btn">Other Settings &raquo;</button>
+                </div>
+            </div>
+            
+            <div class="space-y-2 mb-4 pb-6 border-b border-gray-700">
+                <button onclick="applySettingsAndRestart()" class="action-btn w-full apply-restart-btn">
+                    Apply & Restart
+                </button>
+                <button onclick="handleCommand('terminate')" class="action-btn w-full terminate-btn">
+                    Terminate Exercise
+                </button>
+                <button onclick="launchTrainee()" class="action-btn w-full mt-2" style="background-color: var(--color-pink-400);">
+                    Launch Trainee Display
+                </button>
+            </div>
+
+            <div class="mt-auto stopwatch-container">
+                <h3 class="stopwatch-title display-font">Stopwatch</h3>
+                <p id="stopwatchDisplay" class="stopwatch-display font-mono">0</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="startBtn" onclick="startStopwatch()" class="action-btn stopwatch-btn start-btn">Start</button>
+                    <button id="stopBtn" onclick="stopStopwatch()" class="action-btn stopwatch-btn stop-btn">Stop</button>
+                    <button id="resetBtn" onclick="resetStopwatch()" class="action-btn stopwatch-btn reset-btn">Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="simulator-container">
+            <header class="simulator-header">
+                <p class="header-credit">Made with Love in India</p>
+                <h1 class="header-title display-font">Aircraft Vectoring Simulator Mk1</h1>
+                <p id="simHeaderInfo" class="header-info">Runway 15 In Use | Final Approach Track: 150°</p>
+            </header>
+            
+            <main class="simulator-main">
+                <div id="mainHomingDisplay" class="main-homing-display w-full">---</div>
+                <div id="singleLineOutput" class="single-line-output">
+                    SELECT AIRCRAFT TYPE
+                </div>
+            </main>
+
+            <footer class="simulator-footer">
+                <div class="grid grid-cols-1 footer-grid gap-2">
+                      <button onclick="handleCommand('1')" class="shortcut-btn">Transmit for DF</button>
+                      <button onclick="handleCommand('2')" class="shortcut-btn">Request Heading</button>
+                      <button onclick="handleCommand('3')" class="shortcut-btn">Request Distance</button>
+                </div>
+                <div class="quick-turn-container">
+                    <h4 class="quick-turn-title">Quick Turn Commands</h4>
+                    <div class="grid grid-cols-1 quick-turn-grid gap-4">
+                        <div class="quick-turn-command-group">
+                            <label for="turnLeftInput" class="quick-turn-label">Turn Left Hdg:</label>
+                            <input type="number" id="turnLeftInput" class="quick-turn-input" min="0" max="359">
+                            <button onclick="handleQuickTurn('left')" class="turn-btn">Turn</button>
+                        </div>
+                        
+                        <button onclick="handleCommand('fly level')" class="turn-btn fly-level-btn action-btn">Fly Level</button>
+                        
+                        <div class="quick-turn-command-group">
+                             <label for="turnRightInput" class="quick-turn-label">Turn Right Hdg:</label>
+                            <input type="number" id="turnRightInput" class="quick-turn-input" min="0" max="359">
+                            <button onclick="handleQuickTurn('right')" class="turn-btn">Turn</button>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <div id="pathModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h2 class="modal-title display-font">Flight Path Analysis</h2>
+        <canvas id="pathCanvas"></canvas>
+      </div>
+    </div>
+
+    <div id="advancedSettingsModal" class="modal">
+        <div class="modal-content" style="max-width: 28rem;"> 
+             <span class="close-btn" onclick="closeAdvancedModal()">&times;</span>
+             <h2 class="advanced-modal-title display-font">Other Settings</h2>
+             
+             <div class="space-y-4" style="text-align: left;">
+                 <div id="spawnBearingContainer">
+                     <label for="spawnBearingInput" class="input-label">Manual Spawn Bearing</label>
+                     <input type="number" id="spawnBearingInput" class="input-field" placeholder="0-359, leave blank for random" min="0" max="359">
+                  </div>
+                   <div class="border-t border-gray-700 my-2"></div>
+                  <div id="spawnHeadingContainer">
+                     <label for="spawnHeadingInput" class="input-label">Manual Initial Heading</label>
+                     <input type="number" id="spawnHeadingInput" class="input-field" placeholder="0-359, leave blank for random" min="0" max="359">
+                  </div>
+             </div>
+             <button onclick="closeAdvancedModal()" class="action-btn w-full mt-8 apply-restart-btn">Done</button>
+        </div>
+    </div>
+    
+    <div id="aircraftTypeModal" class="modal" style="display: flex;">
+        <div class="modal-content">
+            <h2 class="aircraft-select-title display-font">Setup Exercise</h2>
+            
+            <div class="mb-6 text-left border-b border-gray-700 pb-6">
+                <p class="font-bold mb-3 text-lg">1. Choose Theme</p>
+                <div class="flex space-x-4">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="radio" name="themeSelector" value="dark" checked> 
+                        <span class="font-semibold">Dark Mode</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="radio" name="themeSelector" value="light"> 
+                        <span class="font-semibold">Light Mode</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="text-left">
+                <p class="font-bold mb-3 text-lg">2. Select Aircraft Type</p>
+                <div class="space-y-4">
+                    <button onclick="startSimulation('fighter')" class="action-btn ac-type-btn ac-type-fighter">Fighter</button>
+                    <button onclick="startSimulation('transport')" class="action-btn ac-type-btn ac-type-transport">Transport</button>
+                    <button onclick="startSimulation('helicopter')" class="action-btn ac-type-btn ac-type-helicopter">Helicopter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONSTANTS ---
+        const AIRCRAFT_PROFILES = {
+            fighter: { cruiseSpeed: 350, approachSpeed: 250 },
+            transport: { cruiseSpeed: 200, approachSpeed: 165 },
+            helicopter: { cruiseSpeed: 120, approachSpeed: 100 }
+        };
+
+        // --- DOM Elements ---
+        const singleLineOutput = document.getElementById('singleLineOutput');
+        const mainHomingDisplay = document.getElementById('mainHomingDisplay');
+        const pathModal = document.getElementById('pathModal');
+        const pathCanvas = document.getElementById('pathCanvas');
+        const ctx = pathCanvas.getContext('2d');
+        const simHeaderInfo = document.getElementById('simHeaderInfo');
+        const advancedSettingsBtn = document.getElementById('advancedSettingsBtn');
+        const advancedSettingsModal = document.getElementById('advancedSettingsModal');
+        const aircraftTypeModal = document.getElementById('aircraftTypeModal');
+        
+        // --- Simulation State ---
+        let simSettings = {};
+        let aircraft = null;
+        let simulationInterval;
+        let simulationActive = false;
+
+        // --- Stopwatch State ---
+        let stopwatchInterval;
+        let stopwatchStartTime = 0;
+        let elapsedTime = 0;
+        const stopwatchDisplay = document.getElementById('stopwatchDisplay');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        
+        function startSimulation(type) {
+            const selectedTheme = document.querySelector('input[name="themeSelector"]:checked').value;
+            if (selectedTheme === 'light') {
+                document.body.classList.add('light-theme');
+            } else {
+                document.body.classList.remove('light-theme');
+            }
+
+            aircraftTypeModal.style.display = 'none';
+            initializeSimulation(type);
+        }
+
+        function applySettingsAndRestart() {
+            if (aircraft) {
+                initializeSimulation(aircraft.type);
+            } else {
+                closeAdvancedModal();
+            }
+        }
+        
+        function clearAllTimeouts() {
+            if (simulationInterval) clearInterval(simulationInterval);
+        }
+
+        function initializeSimulation(acType) {
+            clearAllTimeouts();
+            resetStopwatch();
+
+            const runway = parseInt(document.getElementById('runwayInput').value) || 15;
+            const manualBearingInput = document.getElementById('spawnBearingInput');
+            const manualBearingValue = parseInt(manualBearingInput.value);
+            const useManualBearing = !isNaN(manualBearingValue) && manualBearingValue >= 0 && manualBearingValue < 360;
+            
+            const manualHeadingInput = document.getElementById('spawnHeadingInput');
+            const manualHeadingValue = parseInt(manualHeadingInput.value);
+            const useManualHeading = !isNaN(manualHeadingValue) && manualHeadingValue >= 0 && manualHeadingValue < 360;
+
+            simSettings = { 
+                RUNWAY_HEADING: runway * 10, FINAL_APPROACH_TRACK: runway * 10, 
+                TURN_RATE_DPS: parseInt(document.getElementById('turnRateInput').value) || 2, 
+                INITIAL_DISTANCE_NM: parseInt(document.getElementById('spawnDistInput').value) || 25,
+                useManualBearing: useManualBearing,
+                manualBearing: manualBearingValue,
+                useManualHeading: useManualHeading,
+                manualHeading: manualHeadingValue
+            };
+
+            simHeaderInfo.textContent = `Runway ${runway} In Use | Final Approach Track: ${simSettings.FINAL_APPROACH_TRACK}°`;
+            
+            let initialAngle;
+            if (simSettings.useManualBearing) {
+                initialAngle = simSettings.manualBearing * (Math.PI / 180);
+            } else {
+                 initialAngle = Math.random() * 2 * Math.PI;
+            }
+
+            const speedProfile = AIRCRAFT_PROFILES[acType];
+            const NM_PER_TICK = speedProfile.cruiseSpeed / 3600;
+            
+            aircraft = {
+                callsign: 'ACFT-1',
+                type: acType,
+                x: simSettings.INITIAL_DISTANCE_NM * Math.sin(initialAngle),
+                y: simSettings.INITIAL_DISTANCE_NM * Math.cos(initialAngle),
+                hasSlowedDown: false,
+                speed: speedProfile.cruiseSpeed, nmPerTick: NM_PER_TICK,
+                heading: simSettings.useManualHeading ? simSettings.manualHeading : Math.floor(Math.random() * 360),
+                isTurning: false, turnDirection: 'none', targetHeading: 0,
+                pathHistory: [{ x: simSettings.INITIAL_DISTANCE_NM * Math.sin(initialAngle), y: simSettings.INITIAL_DISTANCE_NM * Math.cos(initialAngle) }],
+                hasPassedOverhead: false,
+                isEstablishedOutbound: false 
+            };
+
+            simulationActive = true;
+            simulationInterval = setInterval(updateSimulation, 1000);
+            setSingleLineOutput('SIMULATION INITIALIZED');
+            mainHomingDisplay.textContent = '---';
+        }
+        
+        function setSingleLineOutput(message) {
+            singleLineOutput.textContent = message;
+        }
+
+        // --- UPDATED SIMULATION LOOP FOR CONTINUOUS TURNS ---
+        function updateSimulation() {
+            if (!simulationActive || !aircraft) return;
+            
+            let ac = aircraft;
+
+            if (ac.isTurning) {
+                // If targetHeading is -1, it means continuous turn
+                if (ac.targetHeading === -1) {
+                    ac.heading = (ac.heading + (ac.turnDirection === 'right' ? simSettings.TURN_RATE_DPS : -simSettings.TURN_RATE_DPS) + 360) % 360;
+                } else {
+                    const diff = (ac.targetHeading - ac.heading + 360) % 360;
+                    if (diff < simSettings.TURN_RATE_DPS || diff > 360 - simSettings.TURN_RATE_DPS) {
+                        ac.heading = ac.targetHeading;
+                        ac.isTurning = false;
+                        setSingleLineOutput(`${ac.callsign} steady on heading ${Math.round(ac.heading).toString().padStart(3, '0')}.`);
+                    } else {
+                        ac.heading = (ac.heading + (ac.turnDirection === 'right' ? simSettings.TURN_RATE_DPS : -simSettings.TURN_RATE_DPS) + 360) % 360;
+                    }
+                }
+            }
+            
+            const headingRad = (ac.heading - 90) * (Math.PI / 180);
+            ac.x += ac.nmPerTick * Math.cos(headingRad);
+            ac.y -= ac.nmPerTick * Math.sin(headingRad);
+            ac.pathHistory.push({ x: ac.x, y: ac.y });
+
+            const distanceFromBase = Math.sqrt(ac.x * ac.x + ac.y * ac.y);
+            
+            if (!ac.hasSlowedDown && distanceFromBase <= 13) {
+                ac.speed = AIRCRAFT_PROFILES[ac.type].approachSpeed;
+                ac.nmPerTick = ac.speed / 3600;
+                ac.hasSlowedDown = true;
+                setSingleLineOutput(`${ac.callsign} reducing speed to ${ac.speed} kts.`);
+            }
+            
+            if (!ac.hasPassedOverhead && distanceFromBase < 2) {
+                ac.hasPassedOverhead = true;
+            }
+            if (ac.hasPassedOverhead && !ac.isEstablishedOutbound && distanceFromBase > 10) {
+                ac.isEstablishedOutbound = true;
+            }
+        }
+        
+        // --- Event Listeners ---
+        document.getElementById('turnLeftInput').addEventListener('keyup', (event) => { if (event.key === 'Enter') handleQuickTurn('left'); });
+        document.getElementById('turnRightInput').addEventListener('keyup', (event) => { if (event.key === 'Enter') handleQuickTurn('right'); });
+
+        advancedSettingsBtn.addEventListener('click', () => {
+            advancedSettingsModal.style.display = 'flex'
+        });
+
+        // --- UPDATED LOGIC FOR EMPTY TURN INPUTS ---
+        function handleQuickTurn(direction) {
+            const inputId = direction === 'left' ? 'turnLeftInput' : 'turnRightInput';
+            const headingInput = document.getElementById(inputId);
+            const heading = headingInput.value;
+            
+            if (heading === '') {
+                 // Trigger continuous turn if empty
+                 handleCommand(`turn ${direction} continuous`);
+            } else if (!isNaN(heading) && heading >= 0 && heading < 360) {
+                 handleCommand(`turn ${direction} heading ${heading}`);
+                 headingInput.value = '';
+            } else {
+                setSingleLineOutput(`ERROR: Invalid heading. Use 0-359.`);
+            }
+        }
+
+        function handleCommand(command) {
+            const cmd = command.trim().toLowerCase();
+            if (cmd === '') return;
+            if (!simulationActive && cmd !== 'reset') {
+                 setSingleLineOutput('ERROR: Simulation is over. Restart to continue.');
+                 return;
+            }
+            
+            const ac = aircraft;
+            if(!ac) return;
+
+            const parts = cmd.split(' ');
+            
+            switch(parts[0]) {
+                case '1': case 'df': case 'transmit':
+                    const bearingToAc = (Math.atan2(ac.x, ac.y) * (180 / Math.PI) + 360) % 360;
+                    const homing = (bearingToAc + 180) % 360;
+                    const formattedHoming = Math.round(homing).toString().padStart(3, '0');
+                    
+                    mainHomingDisplay.textContent = formattedHoming;
+                    localStorage.setItem('traineeHomingDisplay', formattedHoming);
+                    
+                    setTimeout(() => {
+                        mainHomingDisplay.textContent = '---';
+                        localStorage.setItem('traineeHomingDisplay', '---'); 
+                    }, 4000);
+                    break;
+                case '2': case 'hdg': case 'heading':
+                     setSingleLineOutput(`${ac.callsign} Heading: ${Math.round(ac.heading).toString().padStart(3, '0')}`);
+                    break;
+                case '3': case 'dist': case 'distance':
+                    const dist = Math.sqrt(ac.x * ac.x + ac.y * ac.y);
+                    setSingleLineOutput(`${ac.callsign} is ${dist.toFixed(1)} miles from the base.`);
+                    break;
+                // --- NEW FLY LEVEL COMMAND ---
+                case 'fly':
+                    if (parts[1] === 'level') {
+                        ac.isTurning = false;
+                        setSingleLineOutput(`${ac.callsign} flying level, maintaining heading ${Math.round(ac.heading).toString().padStart(3, '0')}.`);
+                    }
+                    break;
+                case 'turn':
+                    if (parts.length >= 3 && (parts[1] === 'left' || parts[1] === 'right')) {
+                        // --- NEW CONTINUOUS TURN LOGIC ---
+                        if (parts[2] === 'continuous') {
+                            ac.isTurning = true;
+                            ac.turnDirection = parts[1];
+                            ac.targetHeading = -1; // Flag to indicate infinite turning
+                            setSingleLineOutput(`${ac.callsign} turning ${parts[1]} continuously.`);
+                        } else if (parts[2] === 'heading' && parts.length >= 4) {
+                            const newHeading = parseInt(parts[3]);
+                            if (!isNaN(newHeading) && newHeading >= 0 && newHeading < 360) {
+                                ac.isTurning = true;
+                                ac.turnDirection = parts[1];
+                                ac.targetHeading = newHeading;
+                                setSingleLineOutput(`${ac.callsign} turning ${parts[1]} to heading ${newHeading.toString().padStart(3, '0')}.`);
+                            } else {
+                                setSingleLineOutput('ERROR: Invalid heading. Use 0-359.');
+                            }
+                        }
+                    } else {
+                         setSingleLineOutput("ERROR: Invalid turn command format.");
+                    }
+                    break;
+                case 'terminate':
+                    setSingleLineOutput('User terminated exercise.');
+                    endExercise();
+                    break;
+                case 'reset':
+                     applySettingsAndRestart();
+                     closeModal();
+                    break;
+                default:
+                    setSingleLineOutput('ERROR: Unknown command.');
+            }
+        }
+        
+        function endExercise() {
+            simulationActive = false;
+            clearAllTimeouts();
+            stopStopwatch();
+            pathModal.style.display = 'flex';
+            pathModal.classList.add('fullscreen');
+            requestAnimationFrame(drawPath); 
+        }
+
+        function closeModal() { 
+            pathModal.style.display = 'none'; 
+            pathModal.classList.remove('fullscreen');
+        }
+        function closeAdvancedModal() { advancedSettingsModal.style.display = 'none'; }
+
+        // --- Stopwatch Functions ---
+        function formatTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            return `${totalSeconds}`;
+        }
+
+        function updateStopwatch() {
+            const currentTime = Date.now();
+            elapsedTime = currentTime - stopwatchStartTime;
+            stopwatchDisplay.textContent = formatTime(elapsedTime);
+        }
+
+        function startStopwatch() {
+            if (stopwatchInterval) return;
+            stopwatchStartTime = Date.now() - elapsedTime;
+            stopwatchInterval = setInterval(updateStopwatch, 1000); 
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        }
+
+        function stopStopwatch() {
+            if (!stopwatchInterval) return;
+            clearInterval(stopwatchInterval);
+            stopwatchInterval = null;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+
+        function resetStopwatch() {
+            stopStopwatch();
+            elapsedTime = 0;
+            stopwatchDisplay.textContent = '0';
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+
+        // --- Draw Map Canvas (Theme Aware) ---
+        function drawPath() {
+            const modalContent = pathCanvas.parentElement;
+            const size = Math.min(modalContent.clientWidth - 40, modalContent.clientHeight - 80);
+            pathCanvas.width = size;
+            pathCanvas.height = size;
+            const center = size / 2;
+            const isLight = document.body.classList.contains('light-theme');
+
+            let maxCoord = simSettings.INITIAL_DISTANCE_NM;
+            if(aircraft) {
+                aircraft.pathHistory.forEach(p => { maxCoord = Math.max(maxCoord, Math.abs(p.x), Math.abs(p.y)); });
+            }
+            const scale = (size * 0.45) / maxCoord;
+
+            // Background
+            ctx.fillStyle = isLight ? '#f1f5f9' : '#1f2937';
+            ctx.fillRect(0, 0, size, size);
+
+            // Distance Rings
+            ctx.strokeStyle = isLight ? '#cbd5e1' : '#4b5563';
+            ctx.fillStyle = isLight ? '#64748b' : '#6b7280';
+            ctx.lineWidth = 1;
+            ctx.font = '10px Inter';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            
+            let step;
+            if (maxCoord <= 20) step = 5;
+            else if (maxCoord <= 50) step = 10;
+            else if (maxCoord <= 100) step = 20;
+            else step = 25;
+
+            for (let i = 1; i <= 4; i++) {
+                const ringDistance = i * step;
+                const radius = ringDistance * scale;
+                if (radius > center * 0.95) break;
+                ctx.beginPath();
+                ctx.arc(center, center, radius, 0, 2 * Math.PI);
+                ctx.stroke();
+                ctx.fillText(`${ringDistance} NM`, center + radius + 5, center);
+            }
+
+            // North indicator
+            ctx.fillStyle = isLight ? '#64748b' : '#9ca3af';
+            ctx.font = 'bold 14px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('N', center, center - (maxCoord * scale * 1.02));
+
+            // Final approach track
+            ctx.save();
+            ctx.translate(center, center);
+            ctx.rotate(simSettings.FINAL_APPROACH_TRACK * Math.PI / 180);
+            ctx.strokeStyle = isLight ? 'rgba(14, 116, 144, 0.6)' : 'rgba(0, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath(); ctx.moveTo(0, -center * 1.1); ctx.lineTo(0, center * 1.1); ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Runway
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = isLight ? '#0f172a' : '#f3f4f6';
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 1 * scale); ctx.stroke();
+            ctx.restore();
+
+            // Aircraft paths
+            if (aircraft) {
+                ctx.strokeStyle = isLight ? '#ca8a04' : '#facc15';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                const startPoint = aircraft.pathHistory[0];
+                ctx.moveTo(center + startPoint.x * scale, center - startPoint.y * scale);
+                aircraft.pathHistory.forEach(point => { ctx.lineTo(center + point.x * scale, center - point.y * scale); });
+                ctx.stroke();
+
+                // Draw start and end points
+                const endPoint = aircraft.pathHistory[aircraft.pathHistory.length - 1];
+                ctx.fillStyle = '#4ade80'; 
+                ctx.beginPath();
+                ctx.arc(center + startPoint.x * scale, center - startPoint.y * scale, 5, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.fillStyle = '#f87171'; 
+                ctx.beginPath();
+                ctx.arc(center + endPoint.x * scale, center - endPoint.y * scale, 5, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Legend
+                ctx.fillStyle = '#4ade80';
+                ctx.fillRect(10, 10, 10, 10);
+                ctx.fillStyle = isLight ? '#0f172a' : '#9ca3af';
+                ctx.font = '12px Inter';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Start Point', 25, 15);
+                
+                ctx.fillStyle = '#f87171';
+                ctx.fillRect(10, 30, 10, 10);
+                ctx.fillText('End Point', 25, 35);
+            }
+        }
+
+        // --- Trainee Window Logic ---
+        function launchTrainee() {
+            const currentTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
+            window.open(window.location.href.split('?')[0] + '?mode=trainee&theme=' + currentTheme, '_blank', 'width=800,height=600');
+        }
+
+        function checkTraineeMode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            if (urlParams.get('theme') === 'light') {
+                document.body.classList.add('light-theme');
+            }
+
+            if (urlParams.get('mode') === 'trainee') {
+                document.querySelector('.settings-panel').style.display = 'none';
+                document.querySelector('.simulator-footer').style.display = 'none';
+                document.querySelector('.single-line-output').style.display = 'none';
+                document.querySelector('.simulator-header').style.display = 'none';
+                
+                const simContainer = document.querySelector('.simulator-container');
+                simContainer.style.width = '100vw';
+                simContainer.style.height = '100vh';
+                simContainer.style.borderRadius = '0';
+                
+                const mainDisplay = document.getElementById('mainHomingDisplay');
+                mainDisplay.style.fontSize = '35vw'; 
+                mainDisplay.style.border = 'none';
+                mainDisplay.textContent = 'RDY';
+
+                window.addEventListener('storage', (event) => {
+                    if (event.key === 'traineeHomingDisplay') {
+                        mainDisplay.textContent = event.newValue;
+                    }
+                });
+
+                document.getElementById('aircraftTypeModal').style.display = 'none';
+                return true; 
+            }
+            return false; 
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            resetStopwatch();
+            const isTrainee = checkTraineeMode();
+            if (!isTrainee) {
+                document.getElementById('aircraftTypeModal').style.display = 'flex';
+            }
+        });
+    </script></body></html>
